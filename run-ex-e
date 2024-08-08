@@ -1,0 +1,30 @@
+#!/bin/bash
+
+PATTERNS=('[[0, 2, 3, 4]]' '[[3, 4, 5], [2]]' '[[4, 5, 6], [2], [3]]' '[[5, 6, 7], [2], [3], [4]]' '[[6, 7, 8], [2], [3], [4], [5]]' '[[7, 8, 9], [2], [3], [4], [5], [6]]' '[[9, 10], [2], [3], [4], [5], [6], [7], [8]]')
+
+for k in 1000; do
+for i in $(seq -w 1 7); do
+    echo "instance $i with k=$k"
+    PATTERN=${PATTERNS[i-1]}
+    echo $PATTERN
+	echo "Built-in implementation"
+    (
+        ulimit -t 60
+        ulimit -v 2000000
+        ./fast-downward/fast-downward.py nomystery-opt11-strips/p0$i.pddl --search "astar(cpdbs(manual_patterns($PATTERN)))" | grep "Expanded until last jump\|Total time\|Search time"
+    )
+    echo "Built-in PDB implementation"
+    (
+        ulimit -t 60
+        ulimit -v 2000000
+        ./fast-downward/fast-downward.py nomystery-opt11-strips/p0$i.pddl --search "astar(pdb(pattern=greedy($k)))" | grep "Expanded until last jump\|Total time\|Search time"
+    )
+    echo "PlanOpt implementation"
+    (
+        ulimit -t 60
+        ulimit -v 2000000
+        ./fast-downward/fast-downward.py nomystery-opt11-strips/p0$i.pddl --search "astar(planopt_cpdbs(patterns=$PATTERN))" | grep "Expanded until last jump\|Total time\|Search time"
+    )
+    echo
+done
+done
